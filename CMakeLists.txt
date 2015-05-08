@@ -35,3 +35,5 @@ INCLUDE_DIRECTORIES( ${ISMRMRD_INCLUDE_DIR} )
 
 add_executable(philips_to_ismrmrd 
                main.cpp) 
+
+add_executable(sinxml pugixml.cpp sinxml.cpp)
