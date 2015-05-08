@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 
-project(SIEMENS-TO-ISMRMRD)
+project(PHILIPS-TO-ISMRMRD)
 
 #VERSIONING
 set(PHILIPS_TO_ISMRMRD_VERSION_MAJOR 0)
