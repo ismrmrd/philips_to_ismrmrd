@@ -2,7 +2,7 @@
 #include <fstream>
 #include <sstream>
 #include "pugixml.hpp"
-#include <exception>
+#include <stdexcept>
 
 void sintoxml(std::ostream& s, const char* filename)
 {

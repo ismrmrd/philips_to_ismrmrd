@@ -22,18 +22,43 @@ if (WIN32)
 else (WIN32)
   if (UNIX)
     if (APPLE)
-      SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -stdlib=libc++")
+      SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
     else (APPLE)
       SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -std=c++11")
     endif (APPLE)
   endif (UNIX)
 endif (WIN32)
 
-#find_package(Ismrmrd REQUIRED)
+###############################################################
+find_path(ISMRMRD_CMAKE_MODULES FindIsmrmrd.cmake HINTS
+  $ENV{ISMRMRD_HOME}/share/ismrmrd/cmake
+  ${CMAKE_INSTALL_PREFIX}/share/ismrmrd/cmake
+  /usr/local/share/ismrmrd/cmake)
 
+if (NOT ISMRMRD_CMAKE_MODULES)
+   #TODO: Check if path found otherwise create error
+   message(FATAL_ERROR "ISMRMRD_CMAKE_MODULES cannot be found. Try to set ISMRMRD_HOME environment variable.")
+else (NOT ISMRMRD_CMAKE_MODULES)
+   message("ISMRMRD_CMAKE_MODULES found.")
+endif(NOT ISMRMRD_CMAKE_MODULES)
+
+set(CMAKE_MODULE_PATH ${ISMRMRD_CMAKE_MODULES})
+###############################################################
+
+# Added for static linking!!!
+set(Boost_USE_STATIC_LIBS ON)
+find_package(Boost COMPONENTS thread system program_options filesystem REQUIRED)
+
+find_package(LibXml2 REQUIRED)
+find_package(LibXslt REQUIRED)
+INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR} ${LIBXML2_INCLUDE_DIR} ${LIBXSLT_INCLUDE_DIR})
+
+find_package(Ismrmrd REQUIRED)
 INCLUDE_DIRECTORIES( ${ISMRMRD_INCLUDE_DIR} )
 
 add_executable(philips_to_ismrmrd 
-               main.cpp) 
+               main.cpp
+	       pugixml.cpp)
 
-add_executable(sinxml pugixml.cpp sinxml.cpp)
+target_link_libraries(philips_to_ismrmrd ${LIBXSLT_LIBRARIES} ${LIBXML2_LIBRARIES} ${ISMRMRD_LIBRARIES} ${Boost_LIBRARIES})
+
