@@ -42,6 +42,7 @@ struct sinparms
   
   bool ismira;
   uint16_t nchan;
+  std::vector< std::complex<float> > pda_amp_factors;
 };
 
 void sintoxml(std::ostream& s, const char* filename, sinparms& sp)
@@ -81,19 +82,35 @@ void sintoxml(std::ostream& s, const char* filename, sinparms& sp)
       s >> tmp;
 
       bool get_nchan = false;
+      float pda[2];
+      bool get_pda = false;
+      int pda_comp = 0;
       if (parameter_name == "enable_pda") {
 	sp.ismira = false;
       } else if (parameter_name == "max_measured_channels") {
 	get_nchan = true;
       } else if (parameter_name == "nr_measured_channels") {
 	get_nchan = true;
+      } else if (parameter_name == "pda_ampl_factors") {
+	get_pda = true;
       }
       
       while (!s.eof()) {
 	s >> parameter_value;
+
 	if (get_nchan) {
 	  sp.nchan = std::atoi(parameter_value.c_str());
 	}
+
+	if (get_pda) {
+	  pda[pda_comp++] = std::atof(parameter_value.c_str());
+      
+	  if (pda_comp > 1) {
+	    sp.pda_amp_factors.push_back(std::complex<float>(pda[0],pda[1]));
+	    pda_comp = 0;
+	  }
+	}
+
 	if (s.eof()) break;
 	pugi::xml_node v = parm.append_child("value");
 	v.append_child(pugi::node_pcdata).set_value(parameter_value.c_str());
@@ -347,9 +364,6 @@ int main(int argc, char** argv)
     return -1;
   }
 
-  std::cout << "PHILIPS to ISMRMRD Converter" << std::endl;
-  std::cout << "Size of header: " << sizeof(philips::label) << std::endl;
-
   std::string lab_filename = filename + std::string(".lab");
   std::string raw_filename = filename + std::string(".raw");
   std::string sin_filename = filename + std::string(".sin");
@@ -407,9 +421,6 @@ int main(int argc, char** argv)
     }
   }
   
-  std::cout << "ismira: " << sp.ismira << std::endl;
-  std::cout << "nchan: " << sp.nchan << std::endl;
-    
   std::ifstream labf(lab_filename.c_str(), std::ios::in | std::ios::binary | std::ios::ate); //Open file and position at end
 
   if (!labf.is_open()) {
@@ -430,9 +441,6 @@ int main(int argc, char** argv)
 
   philips::label l;
 
-
-  std::ofstream dump("dump.dat", std::ios::out | std::ios::binary);
-
   // Create an ISMRMRD dataset
   ISMRMRD::Dataset ismrmrd_dataset(ismrmrd_file.c_str(), ismrmrd_group.c_str(), true);
   ismrmrd_dataset.writeHeader(ismrmrd_xml);
@@ -448,18 +456,6 @@ int main(int argc, char** argv)
 	if (l.new_.raw_format == 4 || l.new_.raw_format == 6) {
 	  need_decoding = true;
 	}
-	
-	std::cout << need_decoding
-		  << "\t" << raw_file_offset
-		  << "\t" << l.new_.data_size
-		  << "\t" << l.new_.coded_data_size
-		  << "\t" << l.new_.normalization_factor
-		  << "\t" << l.new_.seq_nr
-		  << "\t" << l.new_.label_type
-		  << "\t" << static_cast<int>(l.new_.control)
-		  << "\t" << l.new_.e1_profile_nr
-		  << "\t" << l.new_.channels_active 
-		  << std::endl;
 	
 	size_t nchan = sp.nchan;
 	size_t sample_bytes = 4; // int32... 2 bytes (int16) for non-Mira
@@ -480,7 +476,6 @@ int main(int argc, char** argv)
 	    for (int i = 0; i < l.new_.data_size / 8; i++) {
 	      data[i] = std::complex<float>(converted[i*2], converted[i*2+1]);
 	    }
-	    //dump.write(reinterpret_cast<char*>(data), l.new_.data_size);
 	  }
 	  delete [] buffer;
 	} else {
@@ -490,11 +485,9 @@ int main(int argc, char** argv)
 	
 	raw_file_offset += bytes_read;
 
-	std::cout << "Checking label: " << static_cast<int>(l.new_.control) << std::endl;
         if (l.new_.label_type ==  philips::LABEL_TYPE_STANDARD &&
 	    ((static_cast<int>(l.new_.control) == philips::CTRL_FRC_NOISE_DATA) || (static_cast<int>(l.new_.control) == philips::CTRL_NORMAL_DATA))) {
 
-	  std::cout << "Candidate" << std::endl;
 	  ISMRMRD::Acquisition acq;
 	  acq.clearAllFlags();
 
@@ -520,34 +513,14 @@ int main(int argc, char** argv)
 	  acq.resize(nsamp, nchan);
 	  std::complex<float>* dptr = acq.getDataPtr();
 
-	  /*
-	    
-	    if raw_corr:
-            random_phase = float(lab['random_phase'][lab_pos]) / 32767
-            measurement_phase = lab['measurement_phase'][lab_pos]
-            gain_setting_index = lab['gain_setting_index'][lab_pos]
-            if isMira:
-                pda_corr = 1
-            else:
-                pda_corr = pda_factors[:, gain_setting_index]
-                pda_corr.shape = [nchan, 1]
-            echo_nr = int(lab['echo_nr'][lab_pos])
-            measurement_sign = bool(lab['measurement_sign'][lab_pos])
-            sign = bool(sin['spectrum_signs'][0][echo_nr]) != measurement_sign
-            if not isMira:
-                random_phase *= -1.0
-            phase_factor = np.exp(1j * np.pi * (random_phase - 0.5 * measurement_phase))
-            corr_factor = pda_corr * phase_factor * coil_factor
-        else:
-            random_phase = 1.0
-            corr_factor = 1.0
-	*/
-
 	  std::complex<float> correction_factor = std::polar<float>(1.0, M_PI * (static_cast<float>(l.new_.random_phase)/ 32767.0) - 0.5*l.new_.measurement_phase);
-	  
+
+	  //chop correction
+	  if (l.new_.e1_profile_nr%2) correction_factor *= -1.0; 
+
 	  for (size_t c = 0; c < nchan; c++) {
 	    for (size_t s = 0; s < nsamp; s++) {
-	    dptr[c*nsamp + s] = std::complex<float>(converted[(c*nsamp + s)*2],converted[(c*nsamp + s)*2 + 1]) * correction_factor;
+	      dptr[c*nsamp + s] = std::complex<float>(converted[(c*nsamp + s)*2],converted[(c*nsamp + s)*2 + 1]) * correction_factor;
 	    }
 	  }
 
@@ -557,14 +530,67 @@ int main(int argc, char** argv)
 	delete [] converted;
       }
     } else {
-      std::cout << "Reading of non-Mira data not implemented yet" << std::endl;
-      return -1;
+      if (l.old_.label_type > philips::LABEL_TYPE_MIN && l.old_.label_type < philips::LABEL_TYPE_MAX) {
+
+	size_t nchan = sp.nchan;
+	size_t sample_bytes = 2; 
+	size_t nsamp = l.old_.data_size / nchan / 2 / sample_bytes;
+	
+	int16_t* converted = new int16_t[l.old_.data_size/2];
+	raw.read((char*)converted, l.old_.data_size);
+	size_t bytes_read = l.old_.coded_data_size;
+	
+	raw_file_offset += bytes_read;
+
+        if (l.old_.label_type ==  philips::LABEL_TYPE_STANDARD &&
+	    ((static_cast<int>(l.old_.control) == philips::CTRL_FRC_NOISE_DATA) || (static_cast<int>(l.old_.control) == philips::CTRL_NORMAL_DATA))) {
+
+	  ISMRMRD::Acquisition acq;
+	  acq.clearAllFlags();
+
+	  //TODO: Orientation and position information, should be converted from the SIN file
+	  
+	  if (l.old_.control == philips::CTRL_FRC_NOISE_DATA) {
+	    acq.setFlag(ISMRMRD::ISMRMRD_ACQ_IS_NOISE_MEASUREMENT);
+	  }
+	  
+	  acq.scan_counter() = l.old_.seq_nr;
+	  acq.center_sample() = nsamp>>1; //TODO: Needs to be adjusted for partial Fourier, etc.
+
+	  acq.idx().average              = l.old_.measurement_nr;
+	  acq.idx().contrast             = l.old_.echo_nr;
+	  acq.idx().kspace_encode_step_1 = l.old_.e1_profile_nr;
+	  acq.idx().kspace_encode_step_2 = l.old_.e2_profile_nr;
+	  acq.idx().phase                = l.old_.cardiac_phase_nr;
+	  acq.idx().repetition           = l.old_.dynamic_scan_nr;
+	  acq.idx().segment              = 0; //TODO: Fill in meaningful segment nr
+	  acq.idx().set                  = 0; //TODO: Fill in meaningful set nr
+	  acq.idx().slice                = l.old_.location_nr;
+	  
+	  acq.resize(nsamp, nchan);
+	  std::complex<float>* dptr = acq.getDataPtr();
+
+	  std::complex<float> correction_factor = std::polar<float>(1.0, M_PI * (static_cast<float>(-1.0*l.old_.random_phase)/ 32767.0) - 0.5*l.old_.measurement_phase);
+
+	  //chop correction
+	  if (l.old_.e1_profile_nr%2) correction_factor *= -1.0; 
+	  
+	  for (size_t c = 0; c < nchan; c++) {
+	    for (size_t s = 0; s < nsamp; s++) {
+	      dptr[c*nsamp + s] = std::complex<float>(converted[(c*nsamp + s)*2],converted[(c*nsamp + s)*2 + 1]) * correction_factor;
+	      dptr[c*nsamp + s] *= sp.pda_amp_factors[l.old_.gain_setting_index];
+	    }
+	  }
+
+	  ismrmrd_dataset.appendAcquisition(acq);
+	}
+
+	delete [] converted;
+      }
     }
   }
   labf.close();
   raw.close();
 
-  std::cout << "Found " << count << " labels" << std::endl;
-  std::cout << "Data size: " << raw_file_offset << std::endl;
   return 0;
 }
