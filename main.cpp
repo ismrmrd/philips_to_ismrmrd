@@ -368,7 +368,6 @@ int main(int argc, char** argv)
   std::string raw_filename = filename + std::string(".raw");
   std::string sin_filename = filename + std::string(".sin");
 
-
   //Let's process the sin file first
   sinparms sp;
   std::stringstream s;
@@ -515,7 +514,7 @@ int main(int argc, char** argv)
 
 	  std::complex<float> correction_factor = std::polar<float>(1.0, M_PI * (static_cast<float>(l.new_.random_phase)/ 32767.0) - 0.5*l.new_.measurement_phase);
 
-	  //chop correction
+	  //chop correction, TODO: fix for 3D and add switch for disabling to parameters
 	  if (l.new_.e1_profile_nr%2) correction_factor *= -1.0; 
 
 	  for (size_t c = 0; c < nchan; c++) {
@@ -572,7 +571,7 @@ int main(int argc, char** argv)
 
 	  std::complex<float> correction_factor = std::polar<float>(1.0, M_PI * (static_cast<float>(-1.0*l.old_.random_phase)/ 32767.0) - 0.5*l.old_.measurement_phase);
 
-	  //chop correction
+	  //chop correction, TODO: fix for 3D and add switch for disabling to parameters
 	  if (l.old_.e1_profile_nr%2) correction_factor *= -1.0; 
 	  
 	  for (size_t c = 0; c < nchan; c++) {
