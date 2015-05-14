@@ -216,25 +216,6 @@ std::string apply_stylesheet(std::string xml_raw, std::string xsl)
 }
 
 
-/**
- * Decodes an unsigned variable-length integer using the MSB algorithm.
- * @param value A variable-length encoded integer of arbitrary size.
- * @param inputSize How many bytes are
- */
-template<typename int_t = uint64_t>
-int_t decodeVarint(uint8_t* input, uint8_t inputSize, uint8_t* bytes_used) {
-  int_t ret = 0;
-  for (uint8_t i = 0; i < inputSize; i++) {
-    ret |= (input[i] & 127) << (7 * i);
-    *bytes_used = i + 1;
-    //If the next-byte flag is set
-    if(!(input[i] & 128)) {
-      break;
-    }
-  }
-  return ret;
-}
-
 template <typename T> T read(uint8_t** bufptr)
 {
   T t = *(reinterpret_cast<T*>(*bufptr));
@@ -285,10 +266,7 @@ void decode_chunk(uint8_t* chunk_buffer, int32_t* decoded_buffer, size_t nelemen
 
     for (int n = std::min((int)nelements - idx, 16); n > 0; n--) {
       int32_t tmp = decode_int(&chunk_buffer, bitres, true, val, bitpos);
-      int32_t result = (tmp << shift) + addend;
-      //printf("%2d val: %d, bitpos: %d, tmp: %d, result: %d\n", n, val, bitpos, tmp, result);
-      /* printf("decoded[%d] = %d\n", idx, result); */
-      decoded_buffer[idx++] = result;
+      decoded_buffer[idx++] = (tmp << shift) + addend;
     }
   }
 }
@@ -296,11 +274,7 @@ void decode_chunk(uint8_t* chunk_buffer, int32_t* decoded_buffer, size_t nelemen
 void decode(uint8_t* encoded_buffer, int32_t* decoded_buffer, uint32_t decoded_data_size)
 {
   size_t num_decoded_bytes = 0;
-  int chunk_count = 0;
-  double encoded_chunk_size = 0;
-  double decoded_chunk_size = 0;
   while (num_decoded_bytes < decoded_data_size) {
-    chunk_count++;
     uint16_t expected_decoded_size = read<uint16_t>(&encoded_buffer);
     uint16_t expected_encoded_size = read<uint16_t>(&encoded_buffer);
     uint32_t decoded_buffer_offset = read<uint32_t>(&encoded_buffer) / 4;
@@ -310,15 +284,7 @@ void decode(uint8_t* encoded_buffer, int32_t* decoded_buffer, uint32_t decoded_d
     decode_chunk(encoded_buffer, output_buffer, nelements);
     num_decoded_bytes += expected_decoded_size;
     encoded_buffer += expected_encoded_size;
-
-    encoded_chunk_size += (double)expected_encoded_size;
-    decoded_chunk_size += (double)expected_decoded_size;
   }
-  /* std::cout << */
-  /*   "chunk_count: " << chunk_count << ", " << */
-  /*   "avg. dec size: " << decoded_chunk_size / (double)chunk_count << ", " << */
-  /*   "avg. enc size: " << encoded_chunk_size / (double)chunk_count << ", " << */
-  /*   std::endl; */
 }
 
 int main(int argc, char** argv)
@@ -444,17 +410,11 @@ int main(int argc, char** argv)
   ISMRMRD::Dataset ismrmrd_dataset(ismrmrd_file.c_str(), ismrmrd_group.c_str(), true);
   ismrmrd_dataset.writeHeader(ismrmrd_xml);
   
-  size_t count = 0;
   while ((file_length - labf.tellg()) >= sizeof(philips::label)) {
     labf.read(reinterpret_cast<char*>(&l), sizeof(philips::label));
 
     if (sp.ismira) {      
       if (l.new_.label_type > philips::LABEL_TYPE_MIN && l.new_.label_type < philips::LABEL_TYPE_MAX) {
-	
-	bool need_decoding = false;
-	if (l.new_.raw_format == 4 || l.new_.raw_format == 6) {
-	  need_decoding = true;
-	}
 	
 	size_t nchan = sp.nchan;
 	size_t sample_bytes = 4; // int32... 2 bytes (int16) for non-Mira
@@ -463,18 +423,14 @@ int main(int argc, char** argv)
 	int32_t* converted = new int32_t[l.new_.data_size/4];
 	memset(converted, 0, l.new_.data_size);
 	
-	count++;
 	size_t bytes_read = 0;
-	if (need_decoding) {
+	if (l.new_.raw_format == 4 || l.new_.raw_format == 6) {
+          // need to decode buffer
 	  uint8_t* buffer = new uint8_t[l.new_.coded_data_size];
 	  raw.read((char*)buffer, l.new_.coded_data_size);
 	  bytes_read = l.new_.coded_data_size;
 	  if (l.new_.control == philips::CTRL_NORMAL_DATA) {
 	    decode(buffer, converted, l.new_.data_size);
-	    auto data = new std::complex<float>[l.new_.data_size / 8];
-	    for (int i = 0; i < l.new_.data_size / 8; i++) {
-	      data[i] = std::complex<float>(converted[i*2], converted[i*2+1]);
-	    }
 	  }
 	  delete [] buffer;
 	} else {

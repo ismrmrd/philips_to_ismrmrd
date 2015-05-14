@@ -16,7 +16,7 @@ Example with `ky,kx = 178,480`:
     2     | 49920 | 26       | 1920               | 389.692
     3     | 49920 | 26       | 1920               | 391.692
 
-A chunk is decoded by repeating the following process until every encoded integer in the chunk is decoded (nelements = decoded_size / 4-bytes per integer):
+A chunk is decoded by repeating the following process until every encoded integer in the chunk is decoded (`nelements = decoded_size / 4-bytes per integer`):
 
 1. Decode 5-bit integer from buffer. This will be the bit-resolution.
 1. Decode 5-bit integer from buffer. This will be the optional shift value (commonly zero)
@@ -32,4 +32,4 @@ Decoding an `n`-bit integer from the buffer is achieved by keeping track of two 
 1. the "current" bit-position, and
 2. a "current" 32-bit integer
 
-The bit-position starts at zero for each chunk. The first decoding requires reading an entire 32-bit integer from the encoded buffer. This is saved as the "current" value and the bit-resolution is subtracted from the bit-position. The *next* decoding will either extract the next `n`-bit integer (`n = bit-resolution`) from the "current" value, or, if the bit-position is less than the bit-resolution, read another 32-bit integer from the encoded buffer, and update the "current" value and bit-position accordingly.
+The bit-position starts at zero for each chunk. The first decoding requires reading an entire 32-bit integer from the encoded buffer. This is saved as the "current" value and the bit-resolution is subtracted from the bit-position. The *next* decoding will either extract the next `n`-bit integer (`n = bit-resolution`) from the "current" value, or, if the bit-position is less than the bit-resolution, read another 32-bit integer from the encoded buffer, binary `or` it with the remaining "current" value, and update the "current" value and bit-position accordingly.
