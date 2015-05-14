@@ -15,7 +15,12 @@ A tool for converting Philips raw MR data into [ISMRMRD](https://ismrmrd.github.
 ### Linux and OS X
 
 1. Install dependencies
-2. Get the code: `git clone https://github.com/ismrmrd/philips_to_ismrmrd`
+2. Get the code: 
+
+   ```
+   git clone https://github.com/ismrmrd/philips_to_ismrmrd
+   ```
+   
 3. Generate build files, compile, and install:
 
     ```
@@ -25,3 +30,17 @@ A tool for converting Philips raw MR data into [ISMRMRD](https://ismrmrd.github.
     cmake ..
     make install
     ```
+    
+## Running the converter
+
+### Simple conversion:
+
+```
+philips_to_ismrmrd -f <PHILIPS FILE (without extenssion) > -x IsmrmrdPhilips.xsl -o philips.h5
+```
+
+### Conversion with schema validation:
+
+```
+philips_to_ismrmrd -f <PHILIPS FILE (without extenssion) > -x IsmrmrdPhilips.xsl -s <PATH TO ISMRMRD SCHEMA> -o philips.h5
+```
