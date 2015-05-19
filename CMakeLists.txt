@@ -62,3 +62,4 @@ add_executable(philips_to_ismrmrd
 
 target_link_libraries(philips_to_ismrmrd ${LIBXSLT_LIBRARIES} ${LIBXML2_LIBRARIES} ${ISMRMRD_LIBRARIES} ${Boost_LIBRARIES})
 
+install(TARGETS philips_to_ismrmrd DESTINATION bin)
