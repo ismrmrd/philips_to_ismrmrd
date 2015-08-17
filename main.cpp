@@ -115,7 +115,6 @@ void sintoxml(std::ostream& s, const char* filename, sinparms& sp)
 	  }
 	}
 
-	if (s.eof()) break;
 	pugi::xml_node v = parm.append_child("value");
 	v.append_child(pugi::node_pcdata).set_value(parameter_value.c_str());
       }
