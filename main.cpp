@@ -71,7 +71,7 @@ void sintoxml(std::ostream& s, const char* filename, sinparms& sp)
     char tmp;
     std::string parameter_name;
     std::string parameter_value;
-    if (line.find(':') != std::string::npos && std::isdigit(line[1])) {
+    if (line.find(':') != std::string::npos && isdigit(line[1])) {
       s << line;
       s >> idx1; s >> idx2; s >> idx3; s >> tmp;
       s >> parameter_name;
