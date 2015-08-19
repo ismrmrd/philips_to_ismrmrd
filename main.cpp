@@ -31,6 +31,10 @@ namespace po = boost::program_options;
 
 #include "philips.h"
 
+#ifndef M_PI
+	#define M_PI 3.14159265358979323846
+#endif
+
 struct sinparms
 {
   sinparms()
@@ -67,7 +71,7 @@ void sintoxml(std::ostream& s, const char* filename, sinparms& sp)
     char tmp;
     std::string parameter_name;
     std::string parameter_value;
-    if (line.find(':') != std::string::npos && std::isdigit(line[1])) {
+    if (line.find(':') != std::string::npos && isdigit(line[1])) {
       s << line;
       s >> idx1; s >> idx2; s >> idx3; s >> tmp;
       s >> parameter_name;
@@ -111,7 +115,10 @@ void sintoxml(std::ostream& s, const char* filename, sinparms& sp)
 	  }
 	}
 
-	if (s.eof()) break;
+	#ifndef WIN32
+		if (s.eof()) break;
+	#endif
+
 	pugi::xml_node v = parm.append_child("value");
 	v.append_child(pugi::node_pcdata).set_value(parameter_value.c_str());
       }
@@ -300,6 +307,9 @@ int main(int argc, char** argv)
   bool debug_xml = false;
   bool header_only = false;
 
+  const float polar_magnitude = 1.0;
+  float polar_phase = 0.0;
+
   po::options_description desc("Allowed options");
   desc.add_options()
     ("help,h",                  "Produce HELP message")
@@ -468,7 +478,8 @@ int main(int argc, char** argv)
 	  acq.resize(nsamp, nchan);
 	  std::complex<float>* dptr = acq.getDataPtr();
 
-	  std::complex<float> correction_factor = std::polar<float>(1.0, M_PI * (static_cast<float>(l.new_.random_phase)/ 32767.0) - 0.5*l.new_.measurement_phase);
+	  polar_phase = M_PI * (static_cast<float>(l.new_.random_phase) / 32767.0) - 0.5*l.new_.measurement_phase;
+	  std::complex<float> correction_factor = std::polar<float>(polar_magnitude, polar_phase);
 
 	  //chop correction, TODO: fix for 3D and add switch for disabling to parameters
 	  if (l.new_.e1_profile_nr%2) correction_factor *= -1.0; 
@@ -525,7 +536,8 @@ int main(int argc, char** argv)
 	  acq.resize(nsamp, nchan);
 	  std::complex<float>* dptr = acq.getDataPtr();
 
-	  std::complex<float> correction_factor = std::polar<float>(1.0, M_PI * (static_cast<float>(-1.0*l.old_.random_phase)/ 32767.0) - 0.5*l.old_.measurement_phase);
+	  polar_phase = M_PI * (static_cast<float>(-1.0*l.old_.random_phase) / 32767.0) - 0.5*l.old_.measurement_phase;
+	  std::complex<float> correction_factor = std::polar<float>(polar_magnitude, polar_phase);
 
 	  //chop correction, TODO: fix for 3D and add switch for disabling to parameters
 	  if (l.old_.e1_profile_nr%2) correction_factor *= -1.0; 
