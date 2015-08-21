@@ -35,7 +35,7 @@
         </measurementID>
 	<patientPosition>HFS</patientPosition> <!-- TODO: must be calculated somehow -->
         <protocolName>
-		<xsl:for-each select="philips/scan_name/value"><xsl:value-of select="." /><xsl:choose><xsl:when test="position() != last()">&#160;</xsl:when></xsl:choose></xsl:for-each>
+		<xsl:for-each select="philips/scan_name/value"><xsl:value-of select="." /><xsl:choose><xsl:when test="position() != last()"><xsl:text> </xsl:text></xsl:when></xsl:choose></xsl:for-each>
         </protocolName>
       </measurementInformation>
 

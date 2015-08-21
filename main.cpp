@@ -29,10 +29,12 @@
 #include <boost/program_options.hpp>
 namespace po = boost::program_options;
 
+#include <boost/algorithm/string/trim.hpp>
+
 #include "philips.h"
 
 #ifndef M_PI
-	#define M_PI 3.14159265358979323846
+	#define M_PI 3.14159265358979323846264338327950288
 #endif
 
 struct sinparms
@@ -72,8 +74,9 @@ void sintoxml(std::ostream& s, const char* filename, sinparms& sp)
     std::string parameter_name;
     std::string parameter_value;
     if (line.find(':') != std::string::npos && isdigit(line[1])) {
-      s << line;
-      s >> idx1; s >> idx2; s >> idx3; s >> tmp;
+	  boost::algorithm::trim_right(line);
+	  s << line;
+	  s >> idx1; s >> idx2; s >> idx3; s >> tmp;
       s >> parameter_name;
       
       pugi::xml_node parm = root.append_child(parameter_name.c_str());
@@ -114,10 +117,6 @@ void sintoxml(std::ostream& s, const char* filename, sinparms& sp)
 	    pda_comp = 0;
 	  }
 	}
-
-	#ifndef WIN32
-		if (s.eof()) break;
-	#endif
 
 	pugi::xml_node v = parm.append_child("value");
 	v.append_child(pugi::node_pcdata).set_value(parameter_value.c_str());
