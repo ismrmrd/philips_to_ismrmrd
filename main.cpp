@@ -465,6 +465,9 @@ int main(int argc, char** argv)
 	  acq.scan_counter() = l.new_.seq_nr;
 	  acq.center_sample() = nsamp>>1; //TODO: Needs to be adjusted for partial Fourier, etc.
 
+	  acq.physiology_time_stamp()[0] =  l.new_.rtop_offset;
+	  acq.physiology_time_stamp()[1] =  l.new_.rr_interval;
+
 	  acq.idx().average              = l.new_.measurement_nr;
 	  acq.idx().contrast             = l.new_.echo_nr;
 	  acq.idx().kspace_encode_step_1 = l.new_.e1_profile_nr;
@@ -472,7 +475,7 @@ int main(int argc, char** argv)
 	  acq.idx().phase                = l.new_.cardiac_phase_nr;
 	  acq.idx().repetition           = l.new_.dynamic_scan_nr;
 	  acq.idx().segment              = 0; //TODO: Fill in meaningful segment nr
-	  acq.idx().set                  = 0; //TODO: Fill in meaningful set nr
+	  acq.idx().set                  = l.new_.row_nr;
 	  acq.idx().slice                = l.new_.location_nr;
 	  
 	  acq.resize(nsamp, nchan);

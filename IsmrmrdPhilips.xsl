@@ -115,19 +115,19 @@
           <kspace_encoding_step_1>
             <minimum>0</minimum>
             <maximum>
-	      <xsl:value-of select="philips/recon_resolutions/value[2] * $phaseOversampling - 1"/>
+	      <xsl:value-of select="philips/max_encoding_numbers/value[2]-philips/min_encoding_numbers/value[2]"/>
             </maximum>
             <center>
-	      <xsl:value-of select="floor((philips/recon_resolutions/value[2] * $phaseOversampling) div 2)"/>
+	      <xsl:value-of select="floor((philips/max_encoding_numbers/value[2]-philips/min_encoding_numbers/value[2]) div 2)"/>
             </center>
           </kspace_encoding_step_1>
           <kspace_encoding_step_2>
             <minimum>0</minimum>
             <maximum>
-	      <xsl:value-of select="philips/recon_resolutions/value[3] * $sliceOversampling - 1"/>
+	      <xsl:value-of select="philips/max_encoding_numbers/value[3]-philips/min_encoding_numbers/value[3]"/>
             </maximum>
             <center>
-	      <xsl:value-of select="floor((philips/recon_resolutions/value[3] * $sliceOversampling) div 2)"/>
+	      <xsl:value-of select="floor((philips/max_encoding_numbers/value[3]-philips/min_encoding_numbers/value[3]) div 2)"/>
             </center>
           </kspace_encoding_step_2>
           <slice>
@@ -182,9 +182,7 @@
 
       <sequenceParameters>
 	<xsl:for-each select="philips/repetition_times/value">
-	  <TR>
-            <xsl:value-of select="." />
-	  </TR>
+	  <TR>ETH</TR>
         </xsl:for-each>
 	<xsl:for-each select="philips/echo_times/value">
 	  <TE>
