@@ -40,6 +40,7 @@ INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR} ${LIBXML2_INCLUDE_DIR} ${LIBXSLT_INCLUD
 find_package(ISMRMRD REQUIRED)
 find_package(HDF5 1.8 REQUIRED COMPONENTS C)
 INCLUDE_DIRECTORIES( ${ISMRMRD_INCLUDE_DIR} ${HDF5_C_INCLUDE_DIR})
+link_directories( ${ISMRMRD_LIB_DIR} )
 
 add_executable(philips_to_ismrmrd 
                main.cpp
