@@ -64,13 +64,13 @@
         <encodedSpace>
           <matrixSize>
             <x>
-              <xsl:value-of select="philips/recon_resolutions/value[1] * $readoutOversampling"/>
+              <xsl:value-of select="round(philips/recon_resolutions/value[1] * $readoutOversampling)"/>
             </x>
             <y>
-              <xsl:value-of select="philips/recon_resolutions/value[2] * $phaseOversampling"/>
+              <xsl:value-of select="round(philips/recon_resolutions/value[2] * $phaseOversampling)"/>
             </y>
             <z>
-              <xsl:value-of select="philips/recon_resolutions/value[3] * $sliceOversampling"/>
+              <xsl:value-of select="round(philips/recon_resolutions/value[3] * $sliceOversampling)"/>
             </z>
           </matrixSize>
 
