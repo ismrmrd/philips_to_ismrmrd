@@ -182,7 +182,9 @@
 
       <sequenceParameters>
         <xsl:for-each select="philips/repetition_times/value">
-          <TR>ETH</TR>
+          <TR>
+            <xsl:value-of select="." />
+          </TR>
         </xsl:for-each>
         <xsl:for-each select="philips/echo_times/value">
           <TE>
