@@ -149,7 +149,7 @@ A tool for converting Philips raw MR data into [ISMRMRD](https://ismrmrd.github.
 	
 	- Add `C:\Libraries\FFTW3` to the system path environment variable
     - Install `boost_1_55_0-msvc-12.0-32.exe` available [here](http://sourceforge.net/projects/boost/files/boost-binaries/1.55.0/) to location `C:\Libraries\boost_1_55_0`
-    - Install `hdf5-1.8.15-win32-vs2013-shared.zip` available [here](https://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.15/bin/windows/) to location `C:\local\HDF_Group\HDF5\1.8.15\`
+    - Install `hdf5-1.8.15-win32-vs2013-shared.zip` available [here](https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8/hdf5-1.8.15/bin/windows/) to location `C:\local\HDF_Group\HDF5\1.8.15\`
     - Install CMake available [here](http://www.cmake.org/files/v3.3/cmake-3.3.0-win32-x86.exe) and add to system `path` environment variable
     - Get the `ismrmrd` code using `git clone https://github.com/ismrmrd/ismrmrd` or download zip and save to a parent folder located at `C:\Libraries\ismrmrd`
     - Create folder `C:\Libraries\ismrmrd\build`
